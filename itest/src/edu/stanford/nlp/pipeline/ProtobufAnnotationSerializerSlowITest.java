@@ -258,7 +258,6 @@ public class ProtobufAnnotationSerializerSlowITest {
   }
   */
 
-
   @Test
   public void testSentiment() {
     testAnnotators("tokenize,ssplit,pos,parse,sentiment");

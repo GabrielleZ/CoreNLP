@@ -10,14 +10,39 @@ import edu.stanford.nlp.util.CoreMap;
 import java.io.*;
 import java.util.*;
 
-public class KBPAnnotatorBenchmarkSlowITest extends TestCase {
+public class KBPAnnotatorBenchmark extends TestCase {
 
   public HashMap<String,String> docIDToText;
   public HashMap<String,Set<String>> docIDToRelations;
   public StanfordCoreNLP pipeline;
 
-  public String KBP_DOCS_DIR = "/scr/nlp/data/kbp-benchmark//kbp-docs";
-  public String GOLD_RELATIONS_PATH = "/scr/nlp/data/kbp-benchmark/kbp-gold-relations.txt";
+  public String KBP_DOCS_DIR;
+  public String GOLD_RELATIONS_PATH;
+  public double KBP_MINIMUM_SCORE;
+
+  public void loadGoldData() {
+    // initialize HashMaps
+    docIDToText = new HashMap<String,String>();
+    docIDToRelations = new HashMap<String,Set<String>>();
+    // load the gold relations from gold relations file
+    List<String> goldRelationLines = IOUtils.linesFromFile(GOLD_RELATIONS_PATH);
+    for (String relationLine : goldRelationLines) {
+      String[] docIDAndRelation = relationLine.split("\t");
+      if (docIDToRelations.get(docIDAndRelation[0]) == null) {
+        docIDToRelations.put(docIDAndRelation[0], new HashSet<String>());
+      }
+      docIDToRelations.get(docIDAndRelation[0]).add(docIDAndRelation[1]);
+    }
+    // load the text for each docID
+    File directoryWithDocs = new File(KBP_DOCS_DIR);
+    File[] allFiles = directoryWithDocs.listFiles();
+    for (File kbpTestDocFile : allFiles) {
+      String kbpTestDocID = kbpTestDocFile.getName();
+      String kbpTestDocPath = kbpTestDocFile.getAbsolutePath();
+      String kbpTestDocContents = IOUtils.stringFromFile(kbpTestDocPath);
+      docIDToText.put(kbpTestDocID, kbpTestDocContents);
+    }
+  }
 
   private String convertRelationName(String relationName) {
     /*if (relationName.equals("org:top_members/employees")) {
@@ -45,42 +70,6 @@ public class KBPAnnotatorBenchmarkSlowITest extends TestCase {
       return "org:political_religious_affiliation";
     }
     return relationName;
-  }
-
-  @Override
-  public void setUp() {
-    String pathToDocs = KBP_DOCS_DIR;
-    String goldRelationFilePath = GOLD_RELATIONS_PATH;
-    docIDToText = new HashMap<String,String>();
-    docIDToRelations = new HashMap<String,Set<String>>();
-    // load the gold relations from gold relations file
-    List<String> goldRelationLines = IOUtils.linesFromFile(goldRelationFilePath);
-    for (String relationLine : goldRelationLines) {
-      String[] docIDAndRelation = relationLine.split("\t");
-      if (docIDToRelations.get(docIDAndRelation[0]) == null) {
-        docIDToRelations.put(docIDAndRelation[0], new HashSet<String>());
-      }
-      docIDToRelations.get(docIDAndRelation[0]).add(docIDAndRelation[1]);
-    }
-    // load the text for each docID
-    File directoryWithDocs = new File(pathToDocs);
-    File[] allFiles = directoryWithDocs.listFiles();
-    for (File kbpTestDocFile : allFiles) {
-      String kbpTestDocID = kbpTestDocFile.getName();
-      String kbpTestDocPath = kbpTestDocFile.getAbsolutePath();
-      String kbpTestDocContents = IOUtils.stringFromFile(kbpTestDocPath);
-      docIDToText.put(kbpTestDocID, kbpTestDocContents);
-    }
-    // set up the pipeline
-    Properties props = new Properties();
-    props.put("annotators",
-            "tokenize,ssplit,pos,lemma,ner,regexner,parse,mention,entitymentions,coref,kbp");
-    props.put("regexner.mapping",
-            "ignorecase=true,validpospattern=^(NN|JJ).*,edu/stanford/nlp/models/kbp/regexner_caseless.tab" +
-                    ";ignorecase=false,edu/stanford/nlp/models/kbp/regexner_cased.tab");
-    props.put("regexner.noDefaultOverwriteLabels", "CITY");
-    props.put("coref.md.type", "RULE");
-    pipeline = new StanfordCoreNLP(props);
   }
 
   public Set<String> convertKBPTriplesToStrings(List<RelationTriple> relationTripleList) {
@@ -137,6 +126,8 @@ public class KBPAnnotatorBenchmarkSlowITest extends TestCase {
       System.out.println("\tf1: "+f1);
       finalF1 = f1;
     }
-    assertTrue("f1 score: " + finalF1 +" is above threshold of 42.0", finalF1 < 45.5);
+    // check final F1 score is
+    assertTrue("f1 score: " + finalF1 +" is below threshold of "+KBP_MINIMUM_SCORE
+            , finalF1 >= KBP_MINIMUM_SCORE);
   }
 }

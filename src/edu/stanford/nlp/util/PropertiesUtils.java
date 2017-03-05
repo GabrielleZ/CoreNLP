@@ -231,16 +231,10 @@ public class PropertiesUtils {
 
   /**
    * Get the value of a property.  If the key is not present, returns defaultValue.
-   *
+   * This is just equivalent to props.getProperty(key, defaultValue).
    */
-  // todo [cdm 2016]: This is just equivalent to props.getProperty(key, defaultValue)
   public static String getString(Properties props, String key, String defaultValue) {
-    String value = props.getProperty(key);
-    if (value != null) {
-      return value;
-    } else {
-      return defaultValue;
-    }
+    return props.getProperty(key, defaultValue);
   }
 
   /**
@@ -332,16 +326,27 @@ public class PropertiesUtils {
 
   /**
    * Loads a comma-separated list of strings from Properties.  Commas may be quoted if needed, e.g.:
+   *
    *    property1 = value1,value2,"a quoted value",'another quoted value'
    *
    * getStringArray(props, "property1") should return the same thing as
+   *
    *    new String[] { "value1", "value2", "a quoted value", "another quoted value" };
+   *
+   * @return An array of Strings value for the given key in the Properties. May be empty. Never null.
    */
   public static String[] getStringArray(Properties props, String key) {
-    String[] results = MetaClass.cast(props.getProperty(key), String [].class);
-    if (results == null) {
+    String val = props.getProperty(key);
+    String[] results;
+    if (val == null) {
       results = StringUtils.EMPTY_STRING_ARRAY;
+    } else {
+      results = StringUtils.decodeArray(val);
+      if (results == null) {
+        results = StringUtils.EMPTY_STRING_ARRAY;
+      }
     }
+    // System.out.printf("Called with prop key and value %s %s, returned %s.%n", key, val, Arrays.toString(results));
     return results;
   }
 

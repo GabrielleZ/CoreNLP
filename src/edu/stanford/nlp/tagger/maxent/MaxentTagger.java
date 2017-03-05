@@ -193,8 +193,8 @@ import java.text.DecimalFormat;
  * <tr><td>sgml</td><td>boolean</td><td>false</td><td>Tag, Test</td><td>Very basic tagging of the contents of all sgml fields; for more complex mark-up, consider using the xmlInput option.</td></tr>
  * <tr><td>xmlInput</td><td>String</td><td></td><td>Tag, Test</td><td>Give a space separated list of tags in an XML file whose content you would like tagged.  Any internal tags that appear in the content of fields you would like tagged will be discarded; the rest of the XML will be preserved and the original text of specified fields will be replaced with the tagged text.</td></tr>
  * <tr><td>outputFile</td><td>String</td><td>""</td><td>Tag</td><td>Path to write output to.  If blank, stdout is used.</td></tr>
- * <tr><td>outputFormat</td><td>String</td><td>""</td><td>Tag</td><td>Output format. One of: slashTags (default), xml, or tsv</td></tr>
- * <tr><td>outputFormatOptions</td><td>String</td><td>""</td><td>Tag</td><td>Output format options.</td></tr>
+ * <tr><td>outputFormat</td><td>String</td><td>""</td><td>Tag</td><td>Output format. One of: slashTags (default), xml (or inlineXML as a synonym), or tsv</td></tr>
+ * <tr><td>outputFormatOptions</td><td>String</td><td>""</td><td>Tag</td><td>Output format options. Currently used: lemmatize, verbose, keepEmptySentences</td></tr>
  * <tr><td>tagInside</td><td>String</td><td>""</td><td>Tag</td><td>Tags inside elements that match the regular expression given in the String.</td></tr>
  * <tr><td>search</td><td>String</td><td>cg</td><td>Train</td><td>Specify the search method to be used in the optimization method for training.  Options are 'cg' (conjugate gradient), 'iis' (improved iterative scaling), or 'qn' (quasi-newton).</td></tr>
  * <tr><td>sigmaSquared</td><td>double</td><td>0.5</td><td>Train</td><td>Sigma-squared smoothing/regularization parameter to be used for conjugate gradient search.  Default usually works reasonably well.</td></tr>
@@ -299,13 +299,11 @@ public class MaxentTagger extends Tagger implements ListProcessor<List<? extends
    * Initializer that loads the tagger.
    *
    * @param modelFile Where to initialize the tagger from.
-   *        Most commonly, this is the filename of the trained model,
-   *        for example, <code>
-   *   /u/nlp/data/pos-tagger/wsj3t0-18-left3words/left3words-wsj-0-18.tagger
-   *        </code>.  However, if it starts with "https?://" it will
-   *        be interpreted as a URL.  One can also load models
-   *        directly from the classpath, as in loading from
-   *        edu/stanford/nlp/models/pos-tagger/wsj3t0-18-bidirectional/bidirectional-distsim-wsj-0-18.tagger
+   *        Most commonly, this is the filename of the trained model, for example,
+   *        {@code /u/nlp/data/pos-tagger/wsj3t0-18-left3words/left3words-wsj-0-18.tagger}.
+   *        However, if it starts with "https?://" it will be interpreted as a URL.
+   *        One can also load models directly from the classpath, as in loading from
+   *        {@code edu/stanford/nlp/models/pos-tagger/wsj3t0-18-bidirectional/bidirectional-distsim-wsj-0-18.tagger}.
    * @param config TaggerConfig based on command-line arguments
    * @param printLoading Whether to print a message saying what model file is being loaded and how long it took when finished.
    * @throws RuntimeIOException if I/O errors or serialization errors
@@ -365,14 +363,14 @@ public class MaxentTagger extends Tagger implements ListProcessor<List<? extends
   final boolean alltags = false;
   final Map<String, Set<String>> tagTokens = Generics.newHashMap();
 
-  static final int RARE_WORD_THRESH = Integer.parseInt(TaggerConfig.RARE_WORD_THRESH);
-  static final int MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.MIN_FEATURE_THRESH);
-  static final int CUR_WORD_MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.CUR_WORD_MIN_FEATURE_THRESH);
-  static final int RARE_WORD_MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.RARE_WORD_MIN_FEATURE_THRESH);
-  static final int VERY_COMMON_WORD_THRESH = Integer.parseInt(TaggerConfig.VERY_COMMON_WORD_THRESH);
+  private static final int RARE_WORD_THRESH = Integer.parseInt(TaggerConfig.RARE_WORD_THRESH);
+  private static final int MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.MIN_FEATURE_THRESH);
+  private static final int CUR_WORD_MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.CUR_WORD_MIN_FEATURE_THRESH);
+  private static final int RARE_WORD_MIN_FEATURE_THRESH = Integer.parseInt(TaggerConfig.RARE_WORD_MIN_FEATURE_THRESH);
+  private static final int VERY_COMMON_WORD_THRESH = Integer.parseInt(TaggerConfig.VERY_COMMON_WORD_THRESH);
 
-  static final boolean OCCURRING_TAGS_ONLY = Boolean.parseBoolean(TaggerConfig.OCCURRING_TAGS_ONLY);
-  static final boolean POSSIBLE_TAGS_ONLY = Boolean.parseBoolean(TaggerConfig.POSSIBLE_TAGS_ONLY);
+  private static final boolean OCCURRING_TAGS_ONLY = Boolean.parseBoolean(TaggerConfig.OCCURRING_TAGS_ONLY);
+  private static final boolean POSSIBLE_TAGS_ONLY = Boolean.parseBoolean(TaggerConfig.POSSIBLE_TAGS_ONLY);
 
   private double defaultScore;
   private double[] defaultScores; // = null;
@@ -913,7 +911,7 @@ public class MaxentTagger extends Tagger implements ListProcessor<List<? extends
         log.info("prob read ");
       }
       if (printLoading) {
-        t.done(log, "Reading POS tagger model from " + source);
+        t.done(log, "Loading POS tagger from " + source);
       }
     } catch (IOException | ClassNotFoundException e) {
       throw new RuntimeIOException("Error while loading a tagger model (probably missing model file)", e);
